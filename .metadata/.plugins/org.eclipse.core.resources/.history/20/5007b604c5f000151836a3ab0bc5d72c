@@ -1,0 +1,109 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.util.ArrayList;
+
+public class Server {
+
+	private final static int DEFAULT_PORT = 7652;
+	private final static String DEFAULT_FILE = "hosts.txt";
+	private static int port;
+	private static String filename;
+	static byte[] receive = new byte[256];
+	static byte[] output = new byte[256];
+	static DatagramSocket socket;
+	
+	protected void finalize(){
+		socket.close();
+	} 
+	
+	public static void main(String[] args){
+		port = DEFAULT_PORT;
+		filename = DEFAULT_FILE;
+		if(args.length % 2 != 0 || args.length > 4){
+			System.out.println("Incorrect number of arguments");
+			return;
+		}
+		if(args.length > 0){
+			if(args[0].equals("-p")){
+				try{
+					port = Integer.parseInt((args[1]));
+				} catch(NumberFormatException e){
+					System.out.println("Port is not valid.");
+					return;
+				}
+				if(args.length > 2){
+					if(args[2].equals("-f")){
+						filename = args[3];
+						if(filename.length() == 0){
+							System.out.println("Invalid path to file");
+							return;
+						}
+					}
+				}
+			}
+			if(args[0].equals("-f")){
+				filename = args[1];
+				if(filename.length() == 0){
+					System.out.println("Invalid path to file");
+					return;
+				}
+				if(args.length > 2){
+					if(args[2].equals("-p")){
+						try{
+							port = Integer.parseInt((args[3]));
+						} catch(NumberFormatException e){
+							System.out.println("Port is not valid.");
+							return;
+						}
+					}
+				}
+			}
+		}
+		ArrayList<String> lines = new ArrayList<String>();
+		port = (port == 7652) ? DEFAULT_PORT: port;
+		filename = (filename.equals(DEFAULT_FILE)) ? DEFAULT_FILE : filename;
+		BufferedReader file;
+		try {
+			file = new BufferedReader(new FileReader(new File(filename)));
+			String line = "";
+			while((line = file.readLine()) != null){
+				lines.add(line.trim());
+			}
+		} catch (FileNotFoundException e) {
+			System.out.println("File not found");
+			return;
+		} catch (Exception e){
+			System.out.println("Error reading file");
+			return;
+		}
+		//put lines entries from arraylist into hashtable
+		try{
+			socket = new DatagramSocket(port);
+			System.out.println("Server started on port " + port + ".");
+			while(true){
+				DatagramPacket received = new DatagramPacket(receive, receive.length);
+				socket.receive(received);
+				String input = new String(received.getData());
+				//go to hashtable
+				InetAddress returnAddress = received.getAddress();                   
+				int returnPort = received.getPort();
+				//build output
+				output = input.getBytes();
+				DatagramPacket response = new DatagramPacket(output, output.length, returnAddress, returnPort);
+				socket.send(response);
+			}
+		} catch (SocketException e) {
+			System.out.println("Could not create port " + port + ".");
+		} catch (Exception e){
+			System.out.println("Error");
+		}
+	}
+
+}

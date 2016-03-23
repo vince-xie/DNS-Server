@@ -1,0 +1,13 @@
+
+public class Server {
+
+	public static void main(String[] args) {
+		if(args.length != 2){
+			System.out.println("Usage: [-p port#] [-f hostfile]");
+			return;
+		}
+		System.out.println(args[0]);
+
+	}
+
+}
