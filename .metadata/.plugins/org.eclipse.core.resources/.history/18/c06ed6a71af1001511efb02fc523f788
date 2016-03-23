@@ -1,0 +1,133 @@
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+public class Server {
+
+	private final static int DEFAULT_PORT = 7652;
+	private final static String DEFAULT_FILE = "hosts.txt";
+	private static int port;
+	private static String filename;
+	static byte[] receive = new byte[256]; //check sizes
+	static byte[] output = new byte[256];
+	static DatagramSocket socket;
+	
+	protected void finalize(){
+		socket.close();
+	} 
+	
+	public static HashMap<String, String> parseLines(ArrayList<String> lines){
+		HashMap<String, String> output = new HashMap<String, String>();
+		for(int i = 0; i < lines.size(); i++){
+			if(lines.get(i).length() > 0){
+				if(lines.get(i).charAt(0) != '#'){
+					int index = 0;
+					int end = 0;
+					String remaining = "";
+					for(int j = 0; j < lines.get(i).length(); j++){
+						if(Character.isWhitespace(lines.get(i).charAt(j))){
+							remaining = lines.get(i).substring(j).trim();
+							if(remaining.indexOf('#') > 0){
+								remaining = remaining.substring(0, remaining.indexOf('#'));
+							}
+							remaining = remaining.trim();
+							index = j;
+							break;
+						}
+					}
+					output.put(remaining, lines.get(i).substring(0, index));
+				}
+			}
+		}
+		return output;
+	}
+	
+	public static void main(String[] args){
+		port = DEFAULT_PORT;
+		filename = DEFAULT_FILE;
+		if(args.length % 2 != 0 || args.length > 4){
+			System.out.println("Incorrect number of arguments");
+			return;
+		}
+		if(args.length > 0){
+			if(args[0].equals("-p")){
+				try{
+					port = Integer.parseInt((args[1]));
+				} catch(NumberFormatException e){
+					System.out.println("Port is not valid.");
+					return;
+				}
+				if(args.length > 2){
+					if(args[2].equals("-f")){
+						filename = args[3];
+						if(filename.length() == 0){
+							System.out.println("Invalid path to file");
+							return;
+						}
+					}
+				}
+			}
+			if(args[0].equals("-f")){
+				filename = args[1];
+				if(filename.length() == 0){
+					System.out.println("Invalid path to file");
+					return;
+				}
+				if(args.length > 2){
+					if(args[2].equals("-p")){
+						try{
+							port = Integer.parseInt((args[3]));
+						} catch(NumberFormatException e){
+							System.out.println("Port is not valid.");
+							return;
+						}
+					}
+				}
+			}
+		}
+		ArrayList<String> lines = new ArrayList<String>();
+		port = (port == 7652) ? DEFAULT_PORT: port;
+		filename = (filename.equals(DEFAULT_FILE)) ? DEFAULT_FILE : filename;
+		BufferedReader file;
+		try {
+			file = new BufferedReader(new FileReader(new File(filename)));
+			String line = "";
+			while((line = file.readLine()) != null){
+				lines.add(line.trim());
+			}
+		} catch (FileNotFoundException e) {
+			System.out.println("File not found");
+			return;
+		} catch (Exception e){
+			System.out.println("Error reading file");
+			return;
+		}
+		HashMap<String, String> hostToAddress = parseLines(lines);
+		for (Map.Entry<String,String> entry : hostToAddress.entrySet()) {
+			  String key = entry.getKey();
+			  String value = entry.getValue();
+			  System.out.println(key + " " + value);
+		}
+		try{
+			socket = new DatagramSocket(port);
+			System.out.println("Server started on port " + port + ".");
+			while(true){
+				DatagramPacket received = new DatagramPacket(receive, receive.length);
+				socket.receive(received);
+				String input = new String(received.getData());
+				//go to hashtable
+				InetAddress returnAddress = received.getAddress();                   
+				int returnPort = received.getPort();
+				//build output
+				output = input.getBytes();
+				DatagramPacket response = new DatagramPacket(output, output.length, returnAddress, returnPort);
+				socket.send(response);
+			}
+		} catch (SocketException e) {
+			System.out.println("Could not create socket on port " + port + ".");
+		} catch (Exception e){
+			System.out.println("Error");
+		}
+	}
+
+}

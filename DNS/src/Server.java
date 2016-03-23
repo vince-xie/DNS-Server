@@ -16,6 +16,32 @@ public class Server {
 		socket.close();
 	} 
 	
+	public static HashMap<String, String> parseLines(ArrayList<String> lines){
+		HashMap<String, String> output = new HashMap<String, String>();
+		for(int i = 0; i < lines.size(); i++){
+			if(lines.get(i).length() > 0){
+				if(lines.get(i).charAt(0) != '#'){
+					int index = 0;
+					int end = 0;
+					String remaining = "";
+					for(int j = 0; j < lines.get(i).length(); j++){
+						if(Character.isWhitespace(lines.get(i).charAt(j))){
+							remaining = lines.get(i).substring(j).trim();
+							if(remaining.indexOf('#') > 0){
+								remaining = remaining.substring(0, remaining.indexOf('#'));
+							}
+							remaining = remaining.trim();
+							index = j;
+							break;
+						}
+					}
+					output.put(remaining, lines.get(i).substring(0, index));
+				}
+			}
+		}
+		return output;
+	}
+	
 	public static void main(String[] args){
 		port = DEFAULT_PORT;
 		filename = DEFAULT_FILE;
@@ -76,7 +102,7 @@ public class Server {
 			System.out.println("Error reading file");
 			return;
 		}
-		//parse line entries from arraylist and put into hashtable
+		HashMap<String, String> hostToAddress = parseLines(lines);
 		try{
 			socket = new DatagramSocket(port);
 			System.out.println("Server started on port " + port + ".");
@@ -84,6 +110,7 @@ public class Server {
 				DatagramPacket received = new DatagramPacket(receive, receive.length);
 				socket.receive(received);
 				String input = new String(received.getData());
+				//parse input
 				//go to hashtable
 				InetAddress returnAddress = received.getAddress();                   
 				int returnPort = received.getPort();
@@ -93,7 +120,7 @@ public class Server {
 				socket.send(response);
 			}
 		} catch (SocketException e) {
-			System.out.println("Could not create port " + port + ".");
+			System.out.println("Could not create socket on port " + port + ".");
 		} catch (Exception e){
 			System.out.println("Error");
 		}
