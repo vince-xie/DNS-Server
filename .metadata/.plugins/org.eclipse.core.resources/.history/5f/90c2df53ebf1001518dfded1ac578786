@@ -9,6 +9,7 @@ public class Server {
 	private static int port;
 	private static String filename;
 	static byte[] receive = new byte[256]; //check sizes
+	static byte[] output = new byte[256];
 	static DatagramSocket socket;
 	
 	protected void finalize(){
@@ -114,7 +115,6 @@ public class Server {
 				InetAddress returnAddress = received.getAddress();                   
 				int returnPort = received.getPort();
 				//build output
-				byte[] output = new byte[256];
 				output = input.getBytes();
 				DatagramPacket response = new DatagramPacket(output, output.length, returnAddress, returnPort);
 				socket.send(response);
