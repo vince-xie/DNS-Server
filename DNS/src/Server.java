@@ -9,9 +9,13 @@ public class Server {
 	private final static String DEFAULT_FILE = "hosts.txt";
 	private static int port;
 	private static String filename;
+<<<<<<< HEAD
 	private static byte[] input = new byte[256]; 	
 	private static byte[] output = new byte[256];
 	private static DatagramPacket packet;	
+=======
+	static byte[] receive = new byte[256]; //check sizes
+>>>>>>> 5d39702340b531b22dedfd68d0346253e4a7a8c6
 	static DatagramSocket socket;
 	private static byte[] queryString;
 	
@@ -256,6 +260,7 @@ public class Server {
 			socket = new DatagramSocket(port);
 			System.out.println("Server started on port " + port + ".");
 			while(true){
+<<<<<<< HEAD
 				
 				// create Datagram packet
 				packet = new DatagramPacket(input, input.length);
@@ -360,6 +365,20 @@ public class Server {
 				}
 				
 				
+=======
+				DatagramPacket received = new DatagramPacket(receive, receive.length);
+				socket.receive(received);
+				String input = new String(received.getData());
+				//parse input
+				//go to hashtable
+				InetAddress returnAddress = received.getAddress();                   
+				int returnPort = received.getPort();
+				//build output
+				byte[] output = new byte[256];
+				output = input.getBytes();
+				DatagramPacket response = new DatagramPacket(output, output.length, returnAddress, returnPort);
+				socket.send(response);
+>>>>>>> 5d39702340b531b22dedfd68d0346253e4a7a8c6
 			}
 		} catch (SocketException e) {
 			System.out.println("Could not create socket on port " + port + ".");
